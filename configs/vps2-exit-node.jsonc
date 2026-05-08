@@ -1,0 +1,84 @@
+{
+  // =============================================================================
+  // VPS2 EXIT NODE — Hop 2
+  // Receives bridge traffic from VPS1 via VLESS+PQC+XTLS-Vision on port 9999.
+  // Exits to the internet via Freedom outbound.
+  //
+  // REPLACE: all values marked with <...>
+  // =============================================================================
+
+  "log": {
+    "loglevel": "warning"
+  },
+
+  "inbounds": [
+    {
+      "tag": "BRIDGE_VLESS_IN",
+      "listen": "0.0.0.0",
+      "port": 9999,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            // ⬇ Run `xray uuid` and paste the result here
+            "id": "<BRIDGE_USER_UUID>",
+            "flow": "xtls-rprx-vision"
+          }
+        ],
+        // ⬇ Run `xray vlessenc` to generate the full decryption string.
+        //    Example format: mlkem768x25519plus.native.600s.100-111-1111.75-0-111.50-0-3333.<X25519_PRIVATE_KEY>.<MLKEM768_SEED>
+        //    Replace the entire value below with the output.
+        "decryption": "<PASTE_vlessenc_OUTPUT_HERE>"
+      },
+      "streamSettings": {
+        "network": "raw",
+        "security": "none"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      }
+    }
+  ],
+
+  "outbounds": [
+    {
+      "tag": "DIRECT",
+      "protocol": "freedom"
+    },
+    {
+      "tag": "BLOCK",
+      "protocol": "blackhole"
+    }
+  ],
+
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        // Block private IP ranges (LAN, loopback, etc.)
+        "ip": ["geoip:private"],
+        "outboundTag": "BLOCK"
+      },
+      {
+        "domain": ["geosite:private"],
+        "outboundTag": "BLOCK"
+      },
+      {
+        // Block BitTorrent traffic
+        "protocol": ["bittorrent"],
+        "outboundTag": "BLOCK"
+      }
+      // Everything else → DIRECT (Freedom)
+    ]
+  },
+
+  "policy": {
+    "levels": {
+      "0": {
+        "handshake": 2,
+        "connIdle": 120
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  // =============================================================================
+  // CLIENT CONFIG — Runs on your local machine
+  //
+  // Inbounds:  SOCKS5 on 10808 + HTTP on 10809
+  // Outbound:  VLESS + XHTTP + TLS → VPS1 (steal oneself)
+  // Routing:   Direct CN traffic, proxy everything else
+  //
+  // REPLACE: all values marked with <...>
+  // =============================================================================
+
+  "log": {
+    "loglevel": "warning"
+  },
+
+  "inbounds": [
+    {
+      "tag": "socks",
+      "listen": "127.0.0.1",
+      "port": 10808,
+      "protocol": "socks",
+      "settings": {
+        "udp": true,
+        "auth": "noauth"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      }
+    },
+    {
+      "tag": "http",
+      "listen": "127.0.0.1",
+      "port": 10809,
+      "protocol": "http",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      }
+    }
+  ],
+
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "<VPS1_DOMAIN>",
+            "port": 443,
+            "users": [
+              {
+                "id": "<YOUR_USER_UUID>",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "<VPS1_DOMAIN>",
+          "allowInsecure": false,
+          "fingerprint": "chrome"
+        },
+        "xhttpSettings": {
+          "path": "/<YOUR_SECRET_PATH>"
+        }
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom"
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
+    }
+  ],
+
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "domain": ["geosite:cn", "geosite:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "ip": ["geoip:cn", "geoip:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "protocol": ["bittorrent"],
+        "outboundTag": "block"
+      },
+      {
+        "outboundTag": "proxy",
+        "network": "tcp,udp"
+      }
+    ]
+  }
+}

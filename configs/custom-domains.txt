@@ -1,0 +1,197 @@
+# Custom domain lists for use with Xray routing
+# Drop this into Xray resource directory alongside geosite.dat
+#
+# Usage in routing rules:
+#   "domain": ["ext:custom-domains.dat:ai-not-cn", "ext:custom-domains.dat:cn-gov"]
+#
+# To build into a .dat file, use the v2fly domain-list-community tool:
+#   https://github.com/v2fly/domain-list-community
+#
+# Or keep this as reference and use explicit domains in routing rules (see vps1-edge-node.jsonc)
+
+# =============================================================================
+# AI services outside China (category-ai-!cn)
+# =============================================================================
+
+# OpenAI
+domain:openai.com
+domain:chatgpt.com
+domain:sora.com
+domain:oaistatic.com
+domain:oaiusercontent.com
+domain:auth0.com @openai
+
+# Anthropic
+domain:anthropic.com
+domain:claude.ai
+
+# Google AI
+domain:gemini.google.com
+domain:generativelanguage.googleapis.com
+domain:aistudio.google.com
+domain:deepmind.google
+domain:deepmind.com
+domain:kaggle.com
+domain:colab.research.google.com
+
+# Microsoft AI / Copilot
+domain:copilot.microsoft.com
+domain:bing.com @copilot
+domain:edgeservices.bing.com
+domain:openai.azure.com
+domain:cognitiveservices.azure.com
+
+# Meta AI
+domain:meta.ai
+domain:llama.meta.com
+
+# Github Copilot
+domain:githubcopilot.com
+domain:copilot-proxy.githubusercontent.com
+
+# Other AI platforms
+domain:perplexity.ai
+domain:poe.com
+domain:you.com
+domain:jasper.ai
+domain:character.ai
+domain:midjourney.com
+domain:stability.ai
+domain:replicate.com
+domain:huggingface.co
+domain:gradio.app
+domain:civitai.com
+domain:leonardo.ai
+domain:playground.com
+domain:ideogram.ai
+domain:runwayml.com
+domain:pika.art
+domain:elevenlabs.io
+domain:suno.ai
+domain:udio.com
+domain:notebooklm.google.com
+domain:bolt.new
+domain:lovable.dev
+domain:replit.com @ai
+domain:cursor.com
+domain:windsurf.com
+domain:tabnine.com
+domain:codium.ai
+domain:codeium.com
+
+# =============================================================================
+# Chinese Government domains (category-gov-cn)
+# =============================================================================
+
+# Central government
+domain:gov.cn
+domain:www.gov.cn
+domain:english.gov.cn
+
+# Ministry websites
+domain:mfa.gov.cn
+domain:fmprc.gov.cn
+domain:mod.gov.cn
+domain:mps.gov.cn
+domain:most.gov.cn
+domain:miit.gov.cn
+domain:mof.gov.cn
+domain:mot.gov.cn
+domain:moe.gov.cn
+domain:mohrss.gov.cn
+domain:mofcom.gov.cn
+domain:mct.gov.cn
+domain:nhc.gov.cn
+domain:mee.gov.cn
+domain:mfa.gov.cn
+domain:ndrc.gov.cn
+
+# State Council
+domain:english.www.gov.cn
+domain:scopsr.gov.cn
+
+# Judicial
+domain:court.gov.cn
+domain:spp.gov.cn
+
+# News / propaganda
+domain:xinhuanet.com
+domain:people.com.cn
+domain:cctv.com
+domain:cntv.cn
+domain:cgtn.com
+domain:chinadaily.com.cn
+domain:china.com.cn
+domain:qstheory.cn
+domain:youth.cn
+
+# Military
+domain:81.cn
+domain:mil.cn
+
+# Communist Party
+domain:cpc.people.com.cn
+domain:dangjian.people.com.cn
+domain:dangjian.cn
+domain:12371.cn
+
+# Cyberspace Administration
+domain:cac.gov.cn
+domain:cnnic.cn
+domain:cnnic.com.cn
+
+# Public security
+domain:12389.gov.cn
+domain:cyberpolice.cn
+
+# =============================================================================
+# AI services IN China (explicitly excluded from proxy routing)
+# These should go direct (already handled by geosite:cn)
+# =============================================================================
+
+# Baidu AI (Ernie)
+# domain:yiyan.baidu.com
+# domain:ernie.baidu.com
+
+# ByteDance (Doubao)
+# domain:doubao.com
+# domain:ark.cn-beijing.volces.com
+# domain:volcengine.com
+
+# Alibaba (Tongyi Qianwen)
+# domain:tongyi.aliyun.com
+# domain:dashscope.aliyuncs.com
+
+# Zhipu AI
+# domain:chatglm.cn
+# domain:bigmodel.cn
+
+# Moonshot (Kimi)
+# domain:kimi.moonshot.cn
+# domain:moonshot.cn
+
+# DeepSeek
+# domain:chat.deepseek.com
+# domain:deepseek.com
+
+# Minimax
+# domain:hailuoai.com
+
+# 01.AI
+# domain:lingyiwanwu.com
+
+# Tencent (Hunyuan)
+# domain:hunyuan.tencent.com
+# domain:hunyuan.cloud.tencent.com
+
+# SenseTime
+# domain:sensetime.com
+# domain:chat.sensetime.com
+
+# iFlytek
+# domain:xinghuo.xfyun.cn
+# domain:iflytek.com
+
+# Kuaishou (Kling)
+# domain:klingai.com
+# domain:kuaishou.com @ai

@@ -1,0 +1,224 @@
+{
+  // =============================================================================
+  // VPS1 EDGE NODE — Hop 1 (close to client)
+  //
+  // Inbound:  VLESS + XHTTP + TLS (steal oneself) on port 443
+  //           XMUX auto-manages H2/H3 connection pooling for stealth.
+  //
+  // Outbound: VLESS + PQC + XTLS-Vision bridge to VPS2 (port 9999)
+  //
+  // Routing:  Block CN + CN-gov → VPS2
+  //           category-ai-!cn → VPS2
+  //           Everything else → DIRECT (Freedom from VPS1)
+  //
+  // REPLACE: all values marked with <...>
+  // =============================================================================
+
+  "log": {
+    "loglevel": "warning"
+  },
+
+  "inbounds": [
+    {
+      "tag": "PUBLIC_XHTTP_IN",
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            // ⬇ Run `xray uuid` and paste the result here (or use Remnawave to manage)
+            "id": "<CLIENT_USER_UUID_OR_LEAVE_EMPTY_FOR_PANEL>",
+            "email": "<user@example.com>"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "tls",
+        "tlsSettings": {
+          "rejectUnknownSni": true,
+          "minVersion": "1.2",
+          "certificates": [
+            {
+              "ocspStapling": 3600,
+              // ⬇ Paths from acme.sh install step
+              "certificateFile": "/etc/ssl/private/fullchain.cer",
+              "keyFile": "/etc/ssl/private/private.key"
+            }
+          ],
+          // ALPN: h2 for default HTTP/2 (best for stream-up mode)
+          // Add "h3" if your network supports QUIC and you want it
+          "alpn": ["h2", "http/1.1"]
+        },
+        "xhttpSettings": {
+          // ⬇ Change this to a random secret path (e.g. /myProxyPath42)
+          "path": "/<YOUR_SECRET_PATH>"
+          // mode: "auto" is the default — uses stream-up on H2, packet-up on H3,
+          //        stream-one on REALITY. Best left unspecified.
+          // XMUX: all zeros = auto-managed defaults (16-32 concurrency,
+          //        600-900 max requests, 1800-3000s max connection lifetime)
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"]
+      }
+    }
+  ],
+
+  "outbounds": [
+    {
+      "tag": "DIRECT",
+      "protocol": "freedom"
+    },
+    {
+      "tag": "BLOCK",
+      "protocol": "blackhole"
+    },
+    {
+      // =========================================================================
+      // Bridge to VPS2 — VLESS + PQC + XTLS-Vision
+      // Uses the bridge service user credentials from VPS2.
+      // =========================================================================
+      "tag": "VLESS_TO_VPS2",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            // ⬇ VPS2 IP address or domain name
+            "address": "<VPS2_IP_OR_DOMAIN>",
+            "port": 9999,
+            "users": [
+              {
+                // ⬇ Same UUID as in vps2-exit-node.jsonc BRIDGE_USER_UUID
+                "id": "<BRIDGE_USER_UUID>",
+                // ⬇ Run `xray vlessenc -c` to generate the client-side string.
+                //    Example: mlkem768x25519plus.native.0rtt.100-111-1111.75-0-111.50-0-3333.<X25519_PASSWORD>.<MLKEM768_CLIENT>
+                "encryption": "<PASTE_vlessenc_c_OUTPUT_HERE>",
+                "flow": "xtls-rprx-vision"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "raw",
+        "security": "none"
+      }
+    }
+  ],
+
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      // ---- always block ----
+      {
+        "ip": ["geoip:private"],
+        "outboundTag": "BLOCK"
+      },
+      {
+        "domain": ["geosite:private"],
+        "outboundTag": "BLOCK"
+      },
+      {
+        "protocol": ["bittorrent"],
+        "outboundTag": "BLOCK"
+      },
+
+      // ---- block China ----
+      {
+        "domain": ["geosite:cn"],
+        "outboundTag": "BLOCK"
+      },
+      {
+        "ip": ["geoip:cn"],
+        "outboundTag": "BLOCK"
+      },
+
+      // ---- block Chinese government + military domains ----
+      // Try geosite category first; if not present, explicit domains are the fallback.
+      // Run `xray geosite list | grep gov` to check availability.
+      {
+        "domain": [
+          "geosite:category-gov-cn",
+          "domain:gov.cn",
+          "domain:mil.cn",
+          "domain:81.cn",
+          "domain:cac.gov.cn",
+          "domain:12371.cn",
+          "keyword:cyberpolice"
+        ],
+        "outboundTag": "BLOCK"
+      },
+
+      // ---- route AI-related non-CN domains to VPS2 ----
+      // These are explicit domains from configs/custom-domains.txt.
+      // If geosite:category-ai-!cn exists, Xray will match that too.
+      {
+        "domain": [
+          // Try geosite — silently ignored if category doesn't exist
+          "geosite:category-ai-!cn",
+          // OpenAI
+          "domain:openai.com",
+          "domain:chatgpt.com",
+          "domain:sora.com",
+          "domain:oaistatic.com",
+          "domain:oaiusercontent.com",
+          // Anthropic
+          "domain:anthropic.com",
+          "domain:claude.ai",
+          // Google AI
+          "domain:gemini.google.com",
+          "domain:generativelanguage.googleapis.com",
+          "domain:aistudio.google.com",
+          "domain:deepmind.google",
+          "domain:deepmind.com",
+          // Microsoft AI
+          "domain:copilot.microsoft.com",
+          "domain:openai.azure.com",
+          "domain:cognitiveservices.azure.com",
+          // Meta
+          "domain:meta.ai",
+          // GitHub Copilot
+          "domain:githubcopilot.com",
+          // Other
+          "domain:perplexity.ai",
+          "domain:poe.com",
+          "domain:you.com",
+          "domain:midjourney.com",
+          "domain:stability.ai",
+          "domain:replicate.com",
+          "domain:huggingface.co",
+          "domain:cursor.com",
+          "domain:windsurf.com",
+          "domain:codeium.com",
+          "domain:tabnine.com",
+          "domain:runwayml.com",
+          "domain:suno.ai",
+          "domain:elevenlabs.io",
+          "domain:notebooklm.google.com",
+          "domain:bolt.new",
+          "domain:lovable.dev"
+        ],
+        "outboundTag": "VLESS_TO_VPS2"
+      },
+
+      // ---- everything else → direct from VPS1 (Freedom) ----
+      {
+        "outboundTag": "DIRECT",
+        "network": "tcp,udp"
+      }
+    ]
+  },
+
+  "policy": {
+    "levels": {
+      "0": {
+        "handshake": 2,
+        "connIdle": 120
+      }
+    }
+  }
+}
