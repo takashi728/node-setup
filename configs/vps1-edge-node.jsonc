@@ -146,70 +146,26 @@
         "outboundTag": "BLOCK"
       },
 
-      // ---- block Chinese government + military domains ----
-      // Try geosite category first; if not present, explicit domains are the fallback.
-      // Run `xray geosite list | grep gov` to check availability.
+      // ---- block CN government/military ----
       {
         "domain": [
           "geosite:category-gov-cn",
           "domain:gov.cn",
           "domain:mil.cn",
-          "domain:81.cn",
           "domain:cac.gov.cn",
-          "domain:12371.cn",
           "keyword:cyberpolice"
         ],
         "outboundTag": "BLOCK"
       },
 
-      // ---- route AI-related non-CN domains to VPS2 ----
-      // These are explicit domains from configs/custom-domains.txt.
-      // If geosite:category-ai-!cn exists, Xray will match that too.
+      // ---- route essential AI services to VPS2 ----
+      // Covers: ChatGPT, Claude, Gemini. Others go direct from VPS1.
       {
         "domain": [
-          // Try geosite — silently ignored if category doesn't exist
           "geosite:category-ai-!cn",
-          // OpenAI
           "domain:openai.com",
-          "domain:chatgpt.com",
-          "domain:sora.com",
-          "domain:oaistatic.com",
-          "domain:oaiusercontent.com",
-          // Anthropic
-          "domain:anthropic.com",
           "domain:claude.ai",
-          // Google AI
-          "domain:gemini.google.com",
-          "domain:generativelanguage.googleapis.com",
-          "domain:aistudio.google.com",
-          "domain:deepmind.google",
-          "domain:deepmind.com",
-          // Microsoft AI
-          "domain:copilot.microsoft.com",
-          "domain:openai.azure.com",
-          "domain:cognitiveservices.azure.com",
-          // Meta
-          "domain:meta.ai",
-          // GitHub Copilot
-          "domain:githubcopilot.com",
-          // Other
-          "domain:perplexity.ai",
-          "domain:poe.com",
-          "domain:you.com",
-          "domain:midjourney.com",
-          "domain:stability.ai",
-          "domain:replicate.com",
-          "domain:huggingface.co",
-          "domain:cursor.com",
-          "domain:windsurf.com",
-          "domain:codeium.com",
-          "domain:tabnine.com",
-          "domain:runwayml.com",
-          "domain:suno.ai",
-          "domain:elevenlabs.io",
-          "domain:notebooklm.google.com",
-          "domain:bolt.new",
-          "domain:lovable.dev"
+          "domain:gemini.google.com"
         ],
         "outboundTag": "VLESS_TO_VPS2"
       },
