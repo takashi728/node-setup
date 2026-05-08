@@ -63,33 +63,10 @@ chmod +x scripts/generate-keys.sh
 # Output saved to configs/generated-keys.txt
 ```
 
-### 2. Set Up TLS on VPS1
+### 3. Configure Panel
 
-```bash
-# On VPS1 (requires domain pointing to VPS1 IP):
-chmod +x scripts/setup-acme.sh
-sudo ./scripts/setup-acme.sh vps1.your-domain.com
-```
-
-### 3. Deploy Configs
-
-**VPS2 (exit node):**
-```bash
-# Edit configs/vps2-exit-node.jsonc with the generated keys
-# Deploy via Remnawave panel (see docs/remnawave-guide.md)
-# Or deploy directly:
-sudo cp configs/vps2-exit-node.jsonc /usr/local/etc/xray/config.json
-sudo systemctl restart xray
-```
-
-**VPS1 (edge node):**
-```bash
-# Edit configs/vps1-edge-node.jsonc with generated keys + VPS2 address
-# Deploy via Remnawave panel
-# Or deploy directly:
-sudo cp configs/vps1-edge-node.jsonc /usr/local/etc/xray/config.json
-sudo systemctl restart xray
-```
+Upload Config Profiles, create the bridge service user, assign squads.
+Full walkthrough: [docs/remnawave-guide.md](docs/remnawave-guide.md)
 
 ### 4. Validate Configs
 
@@ -120,7 +97,7 @@ Edit `configs/client-template.jsonc` and deploy to your Xray client.
 - Xray-core >= v26.x (for VLESS PQC + XHTTP)
 - VPS1: domain + TLS certificate (acme.sh)
 - VPS2: reachable IP, port 9999 (or custom) open
-- Remnawave Panel (optional, for GUI management)
+- Remnawave Panel
 
 ## References
 
