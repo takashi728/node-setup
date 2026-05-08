@@ -32,7 +32,16 @@
             "email": "<user@example.com>"
           }
         ],
-        "decryption": "none"
+        "decryption": "none",
+        // ---- VLESS fallback: non-proxy TLS connections → Nginx decoy on :8080 ----
+        // Deploy the decoy with:  scripts/deploy-decoy.sh
+        // When a browser visits your domain without the XHTTP path, it gets the
+        // decoy website instead of a TLS error. This makes the server look normal.
+        "fallbacks": [
+          {
+            "dest": 8080
+          }
+        ]
       },
       "streamSettings": {
         "network": "xhttp",

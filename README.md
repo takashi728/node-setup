@@ -11,10 +11,13 @@ Two-hop proxy setup using Xray-core with VLESS+XHTTP+TLS (edge) + VLESS+PQC+XTLS
 │   ├── vps1-edge-node.jsonc     # VPS1: XHTTP+TLS inbound + bridge outbound + routing
 │   ├── client-template.jsonc    # Local: SOCKS/HTTP inbounds + XHTTP outbound
 │   ├── custom-domains.txt       # Reference: AI-non-CN + CN-gov domain lists
-│   └── nginx-vps1.conf          # Optional: Nginx frontend for VPS1 XHTTP
+│   ├── nginx-vps1.conf          # Nginx decoy fallback config for VPS1
+│   └── docker-compose.node.yml  # Remnanode deployment template
 ├── scripts/
-│   ├── generate-keys.sh         # Generate UUIDs, PQC keys, X25519 keys
+│   ├── install-vps.sh           # One-shot VPS deployment (installs Remnanode + Docker)
 │   ├── setup-acme.sh            # Obtain TLS cert for VPS1 (steal oneself)
+│   ├── deploy-decoy.sh          # Deploy Nginx decoy container for VPS1 fallback
+│   ├── generate-keys.sh         # Generate VLESS PQC key pair for the bridge
 │   └── validate-configs.sh      # Validate JSON and check for common mistakes
 ├── docs/
 │   └── remnawave-guide.md       # Step-by-step Remnawave panel setup
@@ -33,7 +36,22 @@ Client ──[VLESS + XHTTP + TLS]──→ VPS1 ──[VLESS + PQC + XTLS-Visio
 
 ## Quick Start
 
-### 1. Generate Keys
+### 1. Deploy Nodes to VPSes
+
+```bash
+# VPS2 (exit node) — no domain needed
+sudo ./scripts/install-vps.sh --role exit --secret-key "<VPS2_SECRET_KEY>"
+
+# VPS1 (edge node) — domain required for TLS
+sudo ./scripts/install-vps.sh --role edge --domain vps1.example.com --secret-key "<VPS1_SECRET_KEY>"
+
+# VPS1 only: deploy the decoy fallback site
+./scripts/deploy-decoy.sh
+```
+
+Get `SECRET_KEY` from the Remnawave panel: Nodes → Create Node → copy key.
+
+### 2. Generate PQC Keys
 
 ```bash
 # Install xray binary if needed:

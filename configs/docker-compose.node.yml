@@ -1,0 +1,38 @@
+# =============================================================================
+# docker-compose.yml for Remnanode (Remnawave Node)
+#
+# This template is written to /opt/remnanode/docker-compose.yml by install-vps.sh.
+#
+# Key points:
+#   - network_mode: host — Xray-core needs direct access to host ports (443, etc.)
+#   - SSL certs are mounted from acme.sh output so Xray's TLS inbound uses them
+#   - SECRET_KEY authenticates the node to the Remnawave panel
+#   - NODE_PORT is for panel↔node communication, NOT for proxy traffic
+# =============================================================================
+
+services:
+  remnanode:
+    container_name: remnanode
+    hostname: remnanode
+    image: remnawave/node:latest
+    network_mode: host
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    ulimits:
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    environment:
+      # ⬇ Port the panel uses to communicate with this node
+      - NODE_PORT=__NODE_PORT__
+
+      # ⬇ Secret key from Remnawave panel (Nodes → Create Node → copy key)
+      - SECRET_KEY=__SECRET_KEY__
+
+    # SSL certificate mounts (only used on edge node with TLS inbound)
+    # Mount point: cert goes into /etc/nginx/certs/ inside the container
+    # Remove this block if the node doesn't serve TLS (exit node)
+    # volumes:
+    #   - /opt/remnanode/certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+    #   - /opt/remnanode/certs/privkey.key:/etc/nginx/certs/privkey.key:ro

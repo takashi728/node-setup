@@ -9,17 +9,38 @@
 | **Internal Squad** | Controls which inbounds a group of users can access. |
 | **Host** | An entity pointing to a specific inbound on a node. Users see hosts in their subscription. |
 | **Service User** | A user with unlimited traffic, used only for bridge routing (never connects directly). |
+| **SECRET_KEY** | The shared secret from the panel that authorizes a node to connect. Found at: Nodes → Create Node → copy key. |
 
 ---
 
 ## Step 1 — Install Remnawave Node on Both VPSes
 
-Follow the official guide: https://docs.rw/docs/install/remnawave-node
+Use our automated installer:
 
 ```bash
-# On VPS1
-docker exec -it remnanode tail -n +1 -f /var/log/supervisor/xray.out.log
+# VPS2 (exit node) — no domain needed, bridge-only
+sudo ./scripts/install-vps.sh --role exit --secret-key "$(cat /path/to/vps2_secret_key.txt)"
+
+# VPS1 (edge node) — with domain for TLS cert
+sudo ./scripts/install-vps.sh --role edge --domain vps1.example.com --secret-key "$(cat /path/to/vps1_secret_key.txt)"
 ```
+
+**What the installer does:**
+1. Installs Docker + dependencies
+2. Configures UFW firewall (ports 22, 80, 443, 2222)
+3. Edge only: obtains ECC P-256 Let's Encrypt certificate via acme.sh
+4. Writes `/opt/remnanode/docker-compose.yml` with `network_mode: host`
+5. Starts the Remnanode container
+6. Mounts SSL certificates for edge nodes
+
+**Getting the SECRET_KEY:**
+1. Go to your Remnawave panel → **Nodes** → **Management**
+2. Click **Create new node**
+3. Copy the **SECRET_KEY** shown (or generate a new one)
+4. Save it: `echo "xxxxx" > /path/to/vps<X>_secret_key.txt`
+
+If you prefer manual installation, follow the official guide:
+https://docs.rw/docs/install/remnawave-node
 
 ---
 
@@ -141,7 +162,10 @@ Same as Step 3, but for VPS1:
 
 ## Step 7 — Set Up TLS Certificate on VPS1
 
-Run the ACME script on VPS1:
+> If you used `install-vps.sh --role edge`, the certificate is already installed
+> at `/opt/remnanode/certs/`. Skip to Step 7.1.
+
+**Manual certificate setup:**
 
 ```bash
 sudo ./scripts/setup-acme.sh vps1.your-domain.com
@@ -157,6 +181,23 @@ Verify the certificate:
 ```bash
 openssl x509 -in /etc/ssl/private/fullchain.cer -text -noout | grep -E "(Subject:|DNS:|Not After)"
 ```
+
+### 7.1 Deploy Nginx Decoy (VPS1 only)
+
+The VPS1 config includes a VLESS fallback that forwards unrecognized
+TLS connections (browser visits, probes) to an Nginx decoy on port 8080.
+This makes the server look like a normal website.
+
+```bash
+# Deploy lightweight Nginx decoy container
+chmod +x scripts/deploy-decoy.sh
+./scripts/deploy-decoy.sh
+```
+
+Verify: visit `http://<VPS1-IP>:8080` in a browser. You should see a
+"Site under maintenance" page. When a TLS connection hits port 443 without
+the correct XHTTP path, Xray forwards it here — the visitor sees a normal
+site instead of a TLS error.
 
 ---
 
